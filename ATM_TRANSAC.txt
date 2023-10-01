@@ -1,0 +1,844 @@
+//ATM SIMULATION TRANSACTION MODULE
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <time.h>
+#include <ctype.h>
+#include <windows.h>
+#include <conio.h>
+#include <string.h>
+#define Locx "LRSheet.dbf"
+#define Checkmate "E:\\checker.dbf"
+#define Regis "E:\\account.dbf"
+#define encrypt 10
+#define MAX 200
+#define timer 10
+
+typedef struct account{
+    char pincode[7];
+    char accname[50];
+    int accnum;
+    int indp;
+}ACC;
+
+ACC user[MAX];
+
+int last;
+int num;
+int amount;
+char pin[7];
+char name[50];
+
+int main(){
+    int choice;
+    system("COLOR F0");
+    insertcard();
+    scanRegg();
+    system("cls");
+    makenull();
+    retrieve();
+    logUI();
+    pincode();
+    while(1){
+        menuUI();
+        gotoxy(67,34);
+        scanf("%d",&choice);
+        switch(choice){
+            case 1: withdraw(); break;
+            case 2: deposit(); break;
+            case 3: balanceinquiry(); break;
+            case 4: fundtransfer(); break;
+            case 5: changepin(); break;
+            case 0: save(); saveDes(); exit(1); break;
+            default:
+                clear(43,33,55);
+                text(54,33,"SORRY 1-6 ONLY. I N V A L I D   C H O I C E !");
+                getch();
+                clear(42,34,40);
+            break;
+        }
+    }
+}
+
+void makenull()
+{
+    last = -1;
+}
+
+COORD coord = {0,0};
+
+void gotoxy(int x, int y)
+{
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),coord);
+}
+
+void text(int x, int y, char* txt)
+{
+    gotoxy(x,y);
+    printf("%s",txt);
+}
+
+int locate_accnumber(int accnm)
+{
+    for(int i=0;i<=last;i++)
+        if(user[i].accnum==accnm)
+            return(i);
+    return (-1);
+}
+
+int locate_pinnum(char pin[7])
+{
+    for(int i=0;i<=last;i++)
+        if(strcmp(user[i].pincode,pin)==0)
+            return(i);
+    return (-1);
+}
+
+void starterscr()
+{
+    printf("\t\t\t\t\tLAND OF THE RISING SUN BANK - JEYNARA COMPANY\n");
+    printf("\t\t\t\t^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^\n");
+    printf("\n\t\t\t\t ||               || || || || ||      || || || || ||");
+    printf("\n\t\t\t\t ||               ||          ||      ||          ||");
+    printf("\n\t\t\t\t ||               ||          ||      ||            ");
+    printf("\n\t\t\t\t ||               ||          ||      ||            ");
+    printf("\n\t\t\t\t ||               ||          ||      ||            ");
+    printf("\n\t\t\t\t ||               ||          ||      ||            ");
+    printf("\n\t\t\t\t ||               || || || || ||      ||            ");
+    printf("\n\t\t\t\t ||               ||   ||             || || || || ||");
+    printf("\n\t\t\t\t ||               ||     ||                       ||");
+    printf("\n\t\t\t\t ||               ||       ||                     ||");
+    printf("\n\t\t\t\t ||               ||         ||       ||          ||");
+    printf("\n\t\t\t\t || || || || ||   ||           ||     || || || || ||");
+    printf("\n\t\t\t\t^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^v^\n\n");
+}
+
+void insertcard()
+{
+    FILE *fp;
+    do {
+        system("cls");
+        fp = fopen(Checkmate,"w");
+        if (fp==NULL){
+            starterscr(49,4);
+            text(48,15,"\n\t\t\t\tI - N - S - E - R - T   F - L - A - S - H - D - R - I - V - E ! !");
+            gotoxy(43,18);
+            for(int i=0;i<21;i++){
+                printf("%c ",219);
+                Sleep(90);
+            }
+            printf("%c",219);
+            gotoxy(43,18);
+            for(int i=0;i<21;i++){
+                printf("  ");
+                Sleep(90);
+            }
+        }
+        else{
+            gotoxy(46,15);
+            clear(46,15,25);
+            text(46,15,"F_L_A_S_H_D_R_I_V_E   D_E_T_E_C_T_E_D :)");
+            text(41,18,"[");
+            text(87,18,"]");
+            gotoxy(43,18);
+            for(int i=0;i<22;i++){
+                printf("%c ",219);
+            }
+            text(51,20,"PRESS [ENTER] KEY TO CONTINUE...");
+            fclose(fp);
+            remove(Checkmate);
+            getch();
+        }
+    } while (fp==NULL);
+    fclose(fp);
+    system("cls");
+}
+
+void clear(int x, int y,int len)
+{
+    len+=x;
+    for(int i = x;i<len;i++){
+        gotoxy(i,y);
+        printf(" ");
+    }
+}
+
+void logUI()
+{
+    gotoxy(60-strlen(user[locate_accnumber(num)].accname),15);
+    printf("W E L C O M E  T O  L R S  B A N K, %s [%d] !!",user[locate_accnumber(num)].accname,num);
+}
+
+void pincode()
+{
+    int i,x,counter=0,time=timer,error=0;
+    char confrmpin[6];
+        do{
+            text(52,20," --- E N T E R  Y O U R  P I N C O D E --- ");
+            for (i=0,x=60;i<6;i++,x+=2){
+                gotoxy(x,22);
+                confrmpin[i]=getch()+encrypt;
+                putchar('*');
+                }
+            confrmpin[i]='\0';
+            if(strcmp(pin,confrmpin)!=0){
+                counter++;
+                if(counter==3){
+                    error++;
+                    clear(52,25,26);
+                    text(35,25,"OOPS! MAXIMUM ATTEMPT REACHED !!");
+                    gotoxy(56,26);
+                    printf("Attempts: %d  ",counter);
+                    gotoxy(0,30);
+                    while(time!=0){
+                        gotoxy(51,26);
+                        printf("Try Again in -> %d     ",time);
+                        time--;
+                        sleep(1);
+                    }
+                system("COLOR F0");
+                clear(33,25,97);
+                clear(33,26,97);
+                clear(51,22,27);
+                counter = 0;
+                time = timer*error;
+                }
+                else{
+                    clear(52,25,26);
+                    text(33,25,"W R O N G   P I N C O D E !  Press [ENTER] to Try Again...");
+                    gotoxy(56,26);
+                    printf("Attempts: %d  ",counter);
+                    getch();
+                    clear(33,25,97);
+                    clear(33,26,97);
+                    clear(51,22,27);
+                }
+            }
+        }while(strcmp(pin,confrmpin)!=0);
+}
+
+void menuUI()
+{
+    system("cls");
+    FILE *check;
+    check = fopen(Checkmate,"w");
+     if (check == NULL)
+          insertcard();
+    text(37,4,"WELCOME TO LAND OF THE RISING SUN BANK - JEYNARA COMPANY");
+
+    text(41,9,"U S E R  C O N T A C T:");
+    text(35+(16-(strlen(user[locate_accnumber(num)].accname)/2)),10,user[locate_accnumber(num)].accname);
+    text(70,9,"A c c o u n t  N u m b e r:");
+    gotoxy(81,10);
+    printf("%d",num);
+
+    text(47,15,"-- W I T H D R A W --");
+    text(48,16,"Press [ 1 ]");
+
+    text(80,15,"-- D E P O S I T --");
+    text(81,16,"Press [ 2 ]");
+
+    text(43,21,"-- B A L A N C E  I N Q U I R Y --");
+    text(48,22,"Press [ 3 ]");
+
+    text(77,21,"-- F U N D  T R A N S F E R --");
+    text(81,22,"Press [ 4 ]");
+
+    text(45,27,"-- C H A N G E  P I N --");
+    text(48,28,"Press [ 5 ]");
+
+    text(81,27,"-- E X I T --");
+    text(81,28,"Press [ 0 ]");
+
+    text(43,33,">> ENTER YOUR CHOICE :  ");
+}
+
+void withdraw()
+{
+    system("cls");
+    int wdraw_amnt,i,x,counter=0,time =timer;
+    char accnm[4],wpin[6];
+
+    itoa(num,accnm,10);
+    text(52,3,"-- W I T H D R A W --");
+
+    text(42,8,"U S E R   C O N T A C T: ");
+    text(69+(12-(strlen(user[locate_accnumber(num)].accname)/2)),8,user[locate_accnumber(num)].accname);
+
+    text(40,13,"A C C T.  N U M B E R: ");
+    text(79,13,accnm);
+
+    text(48,18,"A M O U N T -> PHP");
+
+    text(45,23,"E N T E R   P I N : ");
+
+    if (user[locate_accnumber(num)].indp == 0){
+            text(59,28,"T H E R E ' S  N O  B A L A N C E");
+            text(48,29," PRESS [ENTER] KEY TO GO BACK TO MENU... ");
+            getch();
+            for(int a=0;a<5;a++)
+                clear(40,26+a,54);
+        }
+    else{
+    do {
+        text(59,28,"ENTER [0] TO CANCEL");
+        gotoxy(79,18);
+        scanf("%d",&wdraw_amnt);
+        if(wdraw_amnt==0){
+            clear(58,28,25);
+            text(50,28,"TRANSACTION CANCELED.");
+            text(48,29," PRESS [ENTER] KEY TO GO BACK TO MENU... ");
+            getch();
+            for(int a=0;a<5;a++)
+                clear(40,26+a,54);
+            break;
+        }
+        else if (wdraw_amnt>user[locate_accnumber(num)].indp){
+            clear(58,28,25);
+            text(47,28,"OOPS! INSUFICIENT BALANCE.");
+            text(51,29," PRESS [ENTER] KEY TO TRY AGAIN... ");
+            getch();
+            for(int a=0;a<6;a++)
+                clear(40,26+a,54);
+            clear(78,18,10);
+        }
+        else if (wdraw_amnt<0){
+            clear(58,28,25);
+            text(51,28,"A M O U N T   M U S T   B E  > 0");
+            text(51,29,"[ PRESS [ENTER] KEY TO TRY AGAIN... ]");
+            getch();
+            for(int a=0;a<6;a++)
+                clear(40,26+a,54);
+            clear(78,18,10);
+        }
+        else {
+            FILE *check;
+            check = fopen(Checkmate,"w");
+            do{
+                clear(58,28,25);
+                for (i=0,x=75;i<6;i++,x+=2){
+                      gotoxy(x,23);
+                      wpin[i]=getch()+encrypt;
+                      putchar('*');
+                }
+                wpin[i]='\0';
+                if(strcmp(pin,wpin)!=0){
+                    counter++;
+                    if(counter == 3){
+                        system("COLOR 4F");
+                        text(55,28,"W R O N G   P I N C O D E ! ");
+                        text(51,29,"Press [ENTER] to Try Again...  ");
+
+                        while(time!=0){
+                            gotoxy(81,29);
+                            printf("%d  ",time);
+                            time--;
+                            sleep(1);
+                        }
+                        system("COLOR 1F");
+                        clear(42,29,51);
+                        text(51,29," PRESS [ENTER] KEY TO TRY AGAIN... ");
+                        getch();
+                        for(int a=0;a<6;a++)
+                            clear(40,26+a,54);
+                        clear(74,23,14);
+                        counter = 0;
+                        time = timer;
+                    }
+                    else{
+                    text(55,28,"W R O N G  P I N C O D E");
+                    text(51,29," PRESS [ENTER] KEY TO TRY AGAIN...");
+                    getch();
+                    for(int a=0;a<6;a++)
+                        clear(40,26+a,54);
+                    clear(74,23,14);
+                    }
+                }
+                else if (check == NULL){
+                    insertcard();
+                    break;
+                }
+                else{
+                    fclose(check);
+                    remove(Checkmate);
+                    text(49,28,"!! W I T H D R A W   S U C C E S S F U L !!");
+                    text(48,29,"PRESS [ENTER] KEY TO GO BACK TO MENU... ");
+                    user[locate_accnumber(num)].indp-=wdraw_amnt;
+                    getch();
+                    break;
+                }
+              }while(strcmp(pin,wpin)!=0);
+            }
+        }while (wdraw_amnt>user[locate_accnumber(num)].indp || wdraw_amnt<0);
+    }
+}
+
+
+void deposit()
+{
+
+    system("cls");
+    int deposit_amt,i,x,counter=0,time =timer;
+    char accnm[4],wpin[7];
+    itoa(num,accnm,10);
+    text(56,3,"-- D E P O S I T --");
+
+    text(42,8,"U S E R  C O N T A C T: ");
+    text(69+(12-(strlen(user[locate_accnumber(num)].accname)/2)),8,user[locate_accnumber(num)].accname);
+
+    text(40,13,"A C C N T.  N U M B E R:");
+    text(79,13,accnm);
+
+    text(48,18,"A M O U N T -> PHP");
+
+    text(45,23,"E N T E R   P I N: ");
+
+    do {
+        text(59,28,"ENTER [0] TO CANCEL");
+        gotoxy(79,18);
+        scanf("%d",&deposit_amt);
+        if(deposit_amt==0){
+            clear(58,28,25);
+            text(50,28,"OOPS! INSUFICIENT BALANCE.");
+            text(48,29,"PRESS [ENTER] KEY TO GO BACK TO MENU... ");
+            getch();
+            for(int a=0;a<6;a++)
+                clear(40,26+a,54);
+            break;
+        }
+        else if (deposit_amt<0){
+            clear(58,28,25);
+            text(51,28,"A M O U N T   M U S T   B E  > 0");
+            text(51,29,"PRESS [ENTER] KEY TO TRY AGAIN... ");
+            getch();
+            for(int a=0;a<5;a++)
+                clear(40,26+a,54);
+            clear(78,18,10);
+        }
+        else{
+             FILE *check;
+            check = fopen(Checkmate,"w");
+        do{
+            clear(56,28,25);
+            for (i=0,x=75;i<6;i++,x+=2){
+                  gotoxy(x,23);
+                  wpin[i]=getch()+encrypt;
+                  putchar('*');
+            }
+            wpin[i]='\0';
+            if(strcmp(pin,wpin)!=0){
+               counter++;
+                    if(counter == 3){
+                        system("COLOR 4F");
+                        text(55,28,"W R O N G  P I N C O D E");
+                        text(51,29,"PRESS [ENTER] KEY TO TRY AGAIN... ");
+
+                        while(time!=0){
+                            gotoxy(81,29);
+                            printf("%d  ",time);
+                            time--;
+                            sleep(1);
+                        }
+                        system("COLOR 1F");
+                        clear(42,29,51);
+                        text(51,29," PRESS [ENTER] KEY TO TRY AGAIN... ");
+                        getch();
+                        for(int a=0;a<6;a++)
+                            clear(40,26+a,54);
+                        clear(74,23,14);
+                        counter = 0;
+                        time = timer;
+                    }
+                    else{
+                    text(55,28,"W R O N G  P I N C O D E");
+                    text(51,29,"PRESS [ENTER] KEY TO TRY AGAIN...");
+                    getch();
+                    for(int a=0;a<6;a++)
+                        clear(40,26+a,54);
+                    clear(74,23,14);
+                    }
+                }
+            else if (check == NULL){
+                    insertcard();
+                    break;
+            }
+            else{
+                fclose(check);
+                remove(Checkmate);
+                gotoxy(48,28);
+                printf("PHP %d WAS DEPOSITED TO YOUR ACCOUNT : ",deposit_amt);
+                text(48,29,"PRESS [ENTER] KEY TO GO BACK TO MENU...");
+                user[locate_accnumber(num)].indp+=deposit_amt;
+                getch();
+                break;
+            }
+          }while(strcmp(pin,wpin)!=0);
+        }
+    }while (deposit_amt<0);
+}
+
+void balanceinquiry()
+{
+    FILE *check;
+    check = fopen(Checkmate,"w");
+    system("cls");
+    if (check == NULL)
+        insertcard();
+    text(53,3,"-- B A L A N C E   I N Q U I R Y --");
+    text(43,19,">> Y O U R   R E M A I N I N G   B A L A N C E  <<");
+    gotoxy(62,22);
+    printf("PHP %d",user[locate_accnumber(num)].indp);
+    text(53,27,"PRESS [ENTER] KEY TO CONTINUE...");
+    getch();
+}
+
+void fundtransfer()
+{
+
+    int amount_transfer,numloc,i,x,time=timer,counter=0;
+    char pintransfer[7];
+    system("cls");
+    text(54,3,"-- F U N D   T R A N S F E R -- ");
+    gotoxy(24,8);
+    printf("ACCOUNT NAME : %s", user[locate_accnumber(num)].accname);
+    gotoxy(72,8);
+    printf("ACCOUNT NUMBER : %d", num);
+    text(39,13,"ENTER AMOUNT TO BE TRANSFERED >> PHP ");
+
+    text(45,17,"R E C I E V E R   O F   T H E    F U N D S");
+    text(24,21,"ACCOUNT NAME : ");
+    text(72,21,"ACCOUNT NUMBER : ");
+
+    do{
+        text(51,26,"ENTER [0] TO CANCEL TRANSACTION");
+        gotoxy(76,13);
+        scanf("%d",&amount_transfer);
+        if (amount_transfer>user[locate_accnumber(num)].indp){
+            clear(51,26,40);
+            text(51,26,"OOPS! INSUFICIENT BALANCE.");
+            text(48,27,"PRESS [ENTER] KEY TO TRY AGAIN...");
+            getch();
+            clear(76,13,15);
+            clear(38,26,50);
+            clear(48,27,40);
+        }
+        else if (amount_transfer == 0)
+        {
+            text(48,26,"TRANSACTION CANCELLED.");
+            text(46,27,"[ PRESS [ENTER] KEY TO GO BACK TO MENU... ]");
+            getch();
+            break;
+            clear(51,26,30);
+        }
+        else if (amount_transfer<0){
+            clear(51,26,40);
+            text(51,26,"ERROR: AMOUNT SHOULD BE > 0");
+            text(48,27,"PRESS [ENTER] KEY TO TRY AGAIN...");
+            getch();
+            clear(76,13,15);
+            clear(38,26,50);
+            clear(48,27,40);
+        }
+    else{
+
+    gotoxy(90,21);
+    scanf("%d", &numloc);
+    if (locate_accnumber(numloc)<0)
+    {
+        text(40,26,"ERROR: ACCOUNT WITH ENTERED ACCOUNT NUMBER NOT FOUND");
+        text(46,27," PRESS [ENTER] KEY TO GO BACK TO MENU... ");
+        getch();
+    }
+    else {
+        text(40,21,user[locate_accnumber(numloc)].accname);
+        gotoxy(47,26);
+        printf("YOU WILL TRANSFER PHP %d TO %s",amount_transfer,user[locate_accnumber(numloc)].accname);
+        text(51,27," PRESS [ENTER] KEY TO CONTINUE... ");
+        getch();
+        clear(47,26,50);
+        clear(47,27,50);
+        clear(37,29,60);
+        text(40,26,">> E N T E R  P I N C O D E  << ");
+        FILE *check;
+        check = fopen(Checkmate,"w");
+        do{
+            for (i=0,x=70;i<6;i++,x+=2){
+                      gotoxy(x,26);
+                      pintransfer[i]=getch()+encrypt;
+                      putchar('*');
+                }
+                pintransfer[i]='\0';
+                if(strcmp(pin,pintransfer)!=0){
+                    counter++;
+                    if(counter == 3){
+                        system("COLOR 4F");
+                        text(55,25,"W R O N G  P I N C O D E :");
+                        text(49,26,"PRESS [ENTER] KEY TO TRY AGAIN IN ");
+
+                        while(time!=0){
+                            gotoxy(81,26);
+                            printf("%d  ",time);
+                            time--;
+                            sleep(1);
+                        }
+                        system("COLOR 1F");
+                        clear(42,26,51);
+                        text(49,26,"[ PRESS [ENTER] KEY TO TRY AGAIN... ]");
+                        getch();
+                        clear(55,25,40);
+                        clear(51,26,40);
+                        clear(70,22,14);
+                        counter = 0;
+                        time = timer;
+                    }
+                    else{
+                    text(53,29,"W R O N G  P I N C O D E");
+                    text(49,30,"PRESS [ENTER] KEY TO TRY AGAIN]");
+                    getch();
+                    clear(53,29,40);
+                    clear(49,30,40);
+                    clear(70,26,14);
+                    }
+                }
+                 else if (check == NULL){
+                    insertcard();
+                    break;
+                }
+                else{
+                fclose(check);
+                remove(Checkmate);
+                gotoxy(48,29);
+                printf("PHP %d WAS TRANSFERED TO %s",amount_transfer,user[locate_accnumber(numloc)].accname);
+                text(48,30,"PRESS [ENTER] KEY TO GO BACK TO MENU... ]");
+                user[locate_accnumber(numloc)].indp+=amount_transfer;
+                user[locate_accnumber(num)].indp-=amount_transfer;
+                getch();
+                break;
+                }
+          }while(strcmp(pin,pintransfer)!=0);
+        }
+        break;
+      }
+    }while(amount_transfer>user[locate_accnumber(num)].indp || amount_transfer<0);
+}
+
+void changepin()
+{
+    char oldPin[7];
+    char newPin[7];
+    int error = 0;
+    char confpin[7];
+    int i,x ;
+    system("cls");
+    text(54,3,"-- C H A N G E   P I N --");
+    text(39,8,"Enter the old pin : ");
+    text(39,13,"Enter the new pin: ");
+    text(39,18,"CONFIRM NEW PIN: ");
+    do{
+    for (i=0,x=66;i<6;i++,x+=2){
+        gotoxy(x,8);
+        oldPin[i]=getch()+encrypt;
+        putchar('*');
+    }
+    oldPin[i]='\0';
+        if (strcmp(oldPin,pin)!=0)
+        {
+            text(53,23,"W R O N G   P I N C O D E");
+            text(51,24,"[ PRESS ANY KEY TO TRY AGAIN ]");
+            getch();
+            clear(39,23,50);
+            clear(39,24,50);
+            clear(66,8,15);
+        }
+    }while (strcmp(oldPin,pin)!=0);
+
+    do{
+        do{
+            for (i=0,x=66;i<6;i++,x+=2){
+                gotoxy(x,13);
+                newPin[i]=getch()+encrypt;
+                error +=isdigit(newPin[i]-encrypt);
+                putchar('*');
+            }
+            newPin[i]='\0';
+                if (error <6){
+                    text(48,23,"PINCODE MUST CONTAIN NUMBERS ONLY !!");
+                    text(51,24," PRESS [ENTER] KEY TO TRY AGAIN ");
+                    error=0;
+                    getch();
+                    clear(39,23,50);
+                    clear(39,24,50);
+                    clear(66,13,15);
+            }
+        }while(error<6);
+        for (i=0,x=70;i<6;i++,x+=2){
+            gotoxy(x,18);
+            confpin[i]=getch()+encrypt;
+            putchar('*');
+        }
+        confpin[i]='\0';
+        FILE *check;
+        check = fopen(Checkmate,"w");
+        if(strcmp(newPin,confpin)!=0)
+        {
+            text(45,23,"P I N C O D E   D O E S   N O T   M A T C H !");
+            text(51,24," PRESS [ENTER] KEY TO TRY AGAIN ");
+            getch();
+            clear(39,23,50);
+            clear(39,24,50);
+            clear(70,18,15);
+            clear(66,13,15);
+        }
+         else if (check == NULL){
+                    insertcard();
+                    break;
+            }
+        else{
+            fclose(check);
+            remove(Checkmate);
+            text(40,23,"P I N C O D E   C H A N G E   S U C C E S S F U L L Y !");
+            text(48,24," PRESS [ENTER] KEY TO GO BACK TO MENU ");
+            getch();
+            strcpy(pin,newPin);
+            strcpy(user[locate_accnumber(num)].pincode,newPin);
+            break;
+
+        }
+    }while (strcmp(newPin,confpin)!=0);
+
+}
+
+void insert (char accountname[50], char pcode[7], int acctno, int amnt)
+{
+        last++;
+        strcpy(user[last].accname,accountname);
+        strcpy(user[last].pincode,pcode);
+        user[last].accnum = acctno;
+        user[last].indp = amnt;
+}
+
+void retrieve()
+{
+    FILE *fp;
+    char accountname[50],pcode[7];
+    int no,amt;
+    fp = fopen(Locx,"r");
+    if (fp==NULL){
+        system("cls");
+        gotoxy(41,15);
+        printf("FILE NOT FOUND. PRESS ENTER TO CREATE MAIN FILE.");
+        fp = fopen(Locx,"w+");
+        getch();
+    }
+    else{
+        while(!feof(fp)){
+            fscanf(fp,"%d %[^\t]%d %[^\n] ",&no,accountname,&amt,pcode);
+            insert(accountname,pcode,no,amt);
+        }
+    }
+    fclose(fp);
+}
+void saveDes(){
+    FILE *check;
+    int counter;
+        system("cls");
+
+            text(55,15,"S A V I N G   D A T A");
+            text(41,18,"[");
+            text(87,18,"]");
+            for (counter=0;counter<2;counter++){
+               gotoxy(43,18);
+                for(int i=0;i<21;i++){
+                printf("%c ",219);
+                Sleep(90);
+                }
+                printf("%c",219);
+                gotoxy(43,18);
+                for(int i=0;i<22;i++){
+                    printf("  ");
+                    Sleep(90);
+                }
+            }
+            check = fopen(Checkmate,"w");
+            if (check == NULL){
+                for(int i=14;i<16;i++)
+                    clear(40,i,50);
+                system("COLOR 4F");
+                clear(37,15,55);
+                for(int i=43;i<86;i++){
+                    gotoxy(i,18);
+                    printf("%c",219);
+                }
+                text(42,15,"ERROR CREATING ACCOUNT, FLASHDRIVE NOT DETECTED");
+                fclose(check);
+                remove(Checkmate);
+                gotoxy(1,32);
+            }
+            else{
+            fclose(check);
+            remove(Checkmate);
+            clear(48,15,40);
+            for(int i=14;i<17;i++)
+                clear(40,i,50);
+            for(int i=43;i<86;i++){
+                gotoxy(i,18);
+                printf("%c",219);
+            }
+            removecard();
+            text(40,15,"T H A N K   Y O U   F O R   T R U S T I N G  BDF !!");
+            gotoxy(0,25);
+            submitted(20);
+    }
+}
+
+void scanRegg(){
+    FILE *reg;
+    reg = fopen(Regis,"r+");
+    if (reg==NULL){
+        system("cls");
+        gotoxy(24,19);
+        printf(" THE FLASHDRIVE IS NOT REGISTERED, RUN 'ATM REGISTRATION.C' FIRST. Press [ENTER] to exit...");
+        getch();
+        gotoxy(27,25);
+        exit(1);
+    }
+    else{
+        while(!feof(reg)){
+            fscanf(reg,"%d %s",&num,pin);
+        }
+        strcpy(name,user[locate_accnumber(num)].accname);
+        amount = user[locate_accnumber(num)].indp;
+    }
+    fclose(reg);
+}
+
+void save(){
+    FILE *fp;
+    FILE *save;
+    fp= fopen(Locx,"w+");
+    save = fopen(Regis,"w+");
+    for (int i=0;i<last;i++)
+        fprintf(fp,"%d\t%s\t%d\t%s\n",user[i].accnum,user[i].accname,user[i].indp,user[i].pincode);
+    fprintf(save,"%d\t%s",num,pin);
+    fclose(fp);
+}
+
+void submitted(int y)
+{
+    text(53,y+2,"S U B M I T T E D   B Y:");
+    text(56,y+3,"\n BALATERO - CAGUIAT");
+    text(59,y+4,"\nBSIS - 2AB");
+    gotoxy(0,27);
+}
+
+void removecard(){
+FILE *fp;
+do{ system("cls");
+    fp = fopen(Checkmate,"w");
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t PLEASE REMOVE CARD...");
+} while(fp!=NULL);
+fclose(fp);
+}
+

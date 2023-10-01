@@ -1,0 +1,353 @@
+//REGISTRATION MODULE
+
+//NOTE: CHANGE THE DRIVE LETTER
+
+#include <stdio.h>
+#include <stdlib.h>
+#include <conio.h>
+#include <string.h>
+#include <ctype.h>
+#include <time.h>
+#include <windows.h>
+#define encrypt 10
+#define MAX 500
+#define Checkmate "E:\\checker.dbf"  
+#define Locx "LRSheet.dbf"
+#define Regis "E:\\account.dbf"  
+
+typedef struct account{
+    char pincode[7];
+    char accname[50];
+    int accno;
+    int intdepo;
+    char contact[11];
+}LIST;
+
+LIST user[MAX];
+int last;
+
+char pin[7];
+char name[50];
+int num;
+int amount;
+char connum[11];
+
+COORD coord = {0,0};
+
+int main(){
+    int number[4];
+    int i,x;
+    system("color F4");
+    insertcard();
+    scanRegistered();
+    makenull();
+    retrieve();
+    while(1){
+        system("cls");
+        displayUi();
+        getch();
+        acctnogen();
+        gotoxy(43,10);
+        scanf(" %[^\n]s", name);
+        gotoxy(50,13);
+        scanf(" %s", connum);
+        do{
+            gotoxy(53,16);
+            scanf("%d", &amount);
+            if (amount<4999){
+                createtext(39,30,"Initial deposit should be Php 4,999+");
+                getch();
+                clear(53,16,25);
+                clear(30,22,60);
+                createtext(57,31,"- - -");
+                }
+        }while(amount<4999);
+        pincode();
+            if(locate(name)>=0){
+                clear(30,22,60);
+                createtext(57,31,"- - -");
+                createtext(45,22,"Account is already existed, Please try again");
+                getch();
+            }
+            else{
+                FILE *check;
+                saveUI();
+                check = fopen(Checkmate,"w");
+                if (check == NULL){
+                    system("COLOR 4F");
+                    clear(37,15,55);
+                    createtext(40,15,"FLASHDRIVE NOT DETECTED, ERROR CREATING ACCOUNT, ");
+                    fclose(check);
+                    remove(Checkmate);
+                    gotoxy(1,32);
+                    break;
+                }
+                else{
+                    save();
+                    fclose(check);
+                    remove(Checkmate);
+                    nameUI(20);
+                    clear(37,16,55);
+                    createtext(37,15,"ACCOUNT SUCCESFULLY CREATED!! Press [ENTER] to continue");
+                    getch();
+                    clear(37,15,55);
+                    createtext(36,15,"THANK YOU FOR BANKING WITH LRSBank! Press [ENTER] to continue");
+                    getch();
+                    clear(37,15,55);
+                    createtext(36,15,"You may now proceed to transaction... Press [ENTER] to exit...");
+                    getch();
+                    gotoxy(1,32);
+                    break;
+                }
+            }
+        }
+    }
+
+void delay(unsigned int mseconds)
+
+{
+    clock_t goal = mseconds + clock();
+    while(goal > clock());
+}
+
+void start()
+{
+    int arr;
+    system("cls");
+    system("color F4");
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t PLEASE INSERT CARD ");
+
+    for(arr=1; arr<=3; arr++)
+    {
+        printf("..");
+        delay(500);
+    }
+}
+
+void gotoxy(int x, int y){
+    coord.X = x;
+    coord.Y = y;
+    SetConsoleCursorPosition(GetStdHandle(STD_OUTPUT_HANDLE),coord);
+}
+
+void createBlock(int x,int y, int len, char *label){
+    int i;
+    gotoxy(x,y);
+    for(i = x; i < len; i++)
+        printf("_");
+    for(i = y + 1; i < y + 4; i++){
+        gotoxy(x - 1,i);
+        printf("|");
+        gotoxy(len,i);
+        printf("|");
+    }
+    gotoxy(x,y + 3);
+    for(i = x; i < len; i++)
+        printf("_");
+    gotoxy(x+1, y + 2);
+    printf("%s", label);
+}
+
+void createtext(int x, int y, char* text){
+    gotoxy(x,y);
+    printf("%s",text);
+}
+
+void clear(int x, int y,int len){
+    len+=x;
+    for(int i = x;i<len;i++){
+        gotoxy(i,y);
+        printf(" ");
+    }
+}
+
+int isFull(){
+    return (last == MAX-1);
+}
+
+
+void header(int x, int y){
+    printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\tL A N D  O F  T H E  R I S I N G  S U N  B A N K");
+}
+
+void makenull(){
+    last = -1;
+}
+
+int locate(char dupname[50]){
+    for(int i=0;i<=last;i++)
+        if(strcmp(user[i].accname,dupname)==0)
+            return(i);
+    return (-1);
+}
+
+void acctnogen(){
+    srand(time(NULL));
+    num =1000+(rand()%10000);
+    char number[4];
+    itoa(num,number,10);
+    for(int i = 0; i<last;i++)
+        if (num==user[i].accno)
+            num =1000+(rand()%10000);
+    for (int j=0,x=55;j<4;j++,x+=2){
+        gotoxy(x,7);
+        printf(" %c",number[j]);
+        clear(30,22,60);
+        createtext(57,22,"- - -");
+    }
+}
+
+void pincode(){
+    int i,x,error=0;
+    do{
+        for (i=0,x=43;i<6;i++,x+=2){
+            gotoxy(x,19);
+            pin[i]=getch()+encrypt;
+            error += isdigit(pin[i]-encrypt);
+            putchar('*');
+            }
+        pin[i]='\0';
+    }while(error<6);
+         clear(30,22,60);
+         createtext(31,22,"Note: Please remember your pincode!! (ENTER to continue...)");
+         getch();
+         clear(30,22,60);
+         createtext(57,22,"- - -");
+}
+
+
+void displayUi(){
+    int i;
+    createtext(44,3,"R E G I S T R A T I O N  F O R M");
+    createtext(47,6,"A C C O U N T  N U M B E R");
+    createtext(57,31,"- - -");
+    createBlock(30, 8, 90, "ENTER NAME:");
+    createBlock(30, 11, 90, "ENTER CONTACT NO:");
+    createBlock(30, 14, 90, "INITIAL DEPOSIT: Php");
+    createBlock(30, 17, 90, "ENTER PIN:");
+    createBlock(30, 23, 90, " ");
+    createtext(39,25,"TO GENERATE ACCOUNT NUMBER, PRESS ANY KEY...");
+}
+
+
+
+
+void insert (char accountname[50], char pcode[7], int acctno, int amnt, char cont[11]){
+        if (locate(accountname)==-1){
+        last++;
+        strcpy(user[last].accname,accountname);
+        strcpy(user[last].pincode,pcode);
+        user[last].accno = acctno;
+        user[last].intdepo = amnt;
+        strcpy(user[last].contact,cont);
+        }
+    }
+
+void scanRegistered(){
+    FILE *reg;
+    reg = fopen(Regis,"r+");
+    if (reg!=NULL){
+        system("cls");
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t FLASHDRIVE REGISTERED!, YOU MAY NOW PROCEED TO TRANSACTION'");
+        printf("\n\t\t\t\t\t      Press [enter] to exit. .");
+        getch();
+        exit(1);
+    }
+}
+
+void retrieve(){
+    FILE *fp;
+    char accountname[50],pcode[7],cont[11];
+    int no, amt;
+    fp = fopen(Locx,"r+");
+    if (fp==NULL){
+        system("cls");
+        createtext(41,15,"FILE NOT FOUND. PRESS ENTER TO CREATE MAIN FILE");
+        fp = fopen(Locx,"w+");
+        getch();
+    }
+    else{
+        while(!feof(fp)){
+            fscanf(fp,"%d %[^\t]%d\t%s",&no,accountname,&amt,cont);
+            insert(accountname,pcode,no,amt,cont);
+        }
+        if(isFull()){
+            system("COLOR 7C");
+            system("cls");
+            createtext(41,19,"ERROR FILE IS FULL. PRESS ENTER TO EXIT...");
+            getch();
+            gotoxy(27,25);
+            exit(1);
+        }
+
+    }
+    fclose(fp);
+}
+
+void save(){
+    FILE *save;
+    FILE *fp;
+    save = fopen(Regis,"w");
+    fp = fopen(Locx, "w+");
+    fprintf(save,"%d\t%s\n",num,pin);
+    for (int i=0;i<=last;i++)
+        fprintf(fp,"%d\t%s\t%d\t%s\t%s\n",user[i].accno,user[i].accname,user[i].intdepo,user[i].pincode,user[i].contact);
+    fprintf(fp,"%d\t%s\t%d\t%s\t%s\n",num,name,amount,pin,connum);
+    fclose(save);
+    fclose(fp);
+}
+
+void nameUI(int y){
+    createtext(53,y+2,"S U B M I T T E D   B Y:\n");
+    createtext(56,y+3,"BALATERO , CAGUIAT");
+    createtext(59,y+4,"BSIS - 2A");
+    gotoxy(0,27);
+}
+
+void saveUI(){
+int counter;
+    system("cls");
+        header(49,4);
+        createtext(55,15,"S A V I N G   D A T A");
+        createtext(41,18,"[");
+        createtext(87,18,"]");
+        for (counter=0;counter<3;counter++){
+            gotoxy(43,18);
+            for(int i=0;i<22;i++){
+                printf("%c ",219);
+                Sleep(90);
+            }
+            gotoxy(43,18);
+            for(int i=0;i<22;i++){
+                printf("  ");
+                Sleep(90);
+            }
+        }
+        clear(48,15,40);
+        for(int i=14;i<16;i++)
+            clear(40,i,50);
+        for(int i=43;i<86;i++){
+            gotoxy(i,18);
+            printf("%c",219);
+        }
+    }
+
+void insertcard(){
+FILE *fp;
+do
+{
+    system("cls");
+    fp = fopen(Checkmate,"w");
+    if (fp==NULL)
+    {
+        start();
+    }
+    else
+    {
+        printf("\n\n\n\n\n\n\n\n\n\n\n\n\t\t\t\t\t\t FLASHDRIVE DETECTED!");
+        printf("\n\t\t\t\t\t     Press [enter] to continue. .");
+    }
+} while(fp==NULL);
+fclose(fp);
+getch();
+}
